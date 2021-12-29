@@ -1,4 +1,40 @@
 from hashlib import sha256
+import sqlite3
+from sqlite3 import Error
+
+# sqlite database setup to store all users with accounts on record
+def create_connection(path):
+    connection = None
+    try:
+        connection = sqlite3.connect(path)
+        print("Connection to SQLite DB successful")
+    except Error as e:
+        print("The error {} occurred".format(e))
+
+    return connection
+
+db = create_connection("/Users/mosman/blockchain/BlockChain_Learning/blockchain_db.sqlite")
+cur = db.cursor()
+
+cur.execute(
+    '''
+    CREATE TABLE acct (
+        id INT PRIMARY KEY,
+        name TEXT,
+        balance INT
+    )
+    '''
+)
+
+cur.execute(
+    '''
+    INSERT INTO acct
+    VALUES (0, "Person1", 10000),
+           (1, "Person2", 10000),
+           (2, "Person3", 10000)
+    '''
+)
+
 
 # each block will have a capacity of 100 transactions
 BLOCK_CAPACITY = 100
