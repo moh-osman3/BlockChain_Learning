@@ -1,6 +1,7 @@
 from hashlib import sha256
 import sqlite3
 from sqlite3 import Error
+import uuid
 
 # sqlite database setup to store all users with accounts on record
 def create_connection(path):
@@ -51,6 +52,8 @@ Params:
 - prev_hash:     the block_hash of the previous block
 - transactions:  list of transactions ("soure|target|amount")
 - next_block:    next block in the blockchain
+- nonce:         string when hashed with block_hash should start with 3 zeros
+                 for the purpose of proof of work
 
 Methods:
 - ComputeHash:             updates block_hash whenever a transaction is added
@@ -63,6 +66,7 @@ class Block:
         self.prev_hash = None
         self.transactions = []
         self.next_block = None
+        self.nonce = None
 
     def ComputeHash(self):
         # when transaction is added, update the block_hash
@@ -71,7 +75,18 @@ class Block:
 
         if self.next_block:
             self.next_block.prev_hash = self.block_hash
+    
+    # keep generating until starting 3 character of hash are zero
+    def GenerateNonce(self):
+        nonce_attempt = None 
+        nonce_hash = '111'
+        while nonce_hash[:3] != '000':
+            nonce_attempt = uuid.uuid4().hex
+            nonce_hash = sha256((self.block_hash + nonce_attempt)).hexdigest()
         
+        self.nonce = nonce_attempt
+        
+
     def AddTransactionToBlock(self, source, target, amt):
         # if the transaction is valid (i.e. balances check out), then append
         # TODO: this should be connected to a database with users and their
@@ -102,6 +117,7 @@ class Block:
         if len(self.transactions) >= BLOCK_CAPACITY:
             self.next_block = Block(self.block_id + 1)
             self.next_block.prev_hash = self.block_hash
+            self.GenerateNonce()
         
     
 # Testing 
