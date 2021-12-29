@@ -51,7 +51,6 @@ Params:
 - prev_hash:     the block_hash of the previous block
 - transactions:  list of transactions ("soure|target|amount")
 - next_block:    next block in the blockchain
-- is_full:       whether the current block is at capacity
 
 Methods:
 - ComputeHash:             updates block_hash whenever a transaction is added
@@ -64,7 +63,6 @@ class Block:
         self.prev_hash = None
         self.transactions = []
         self.next_block = None
-        self.is_full = False
 
     def ComputeHash(self):
         # when transaction is added, update the block_hash
@@ -81,25 +79,49 @@ class Block:
         self.transactions.append("|".join([source,target,amt]))
         self.ComputeHash()
 
+        cur.execute("SELECT balance FROM acct WHERE name='{}'".format(source))
+        source_bal = cur.fetchone()[0]
+        cur.execute("SELECT balance FROM acct WHERE name='{}'".format(target))
+        target_bal = cur.fetchone()[0]
+        cur.execute(
+            '''
+            UPDATE acct
+            SET balance={}
+            WHERE name='{}'
+            '''.format(source_bal-int(amt), source)
+        )
+
+        cur.execute(
+            '''
+            UPDATE acct
+            SET balance={}
+            WHERE name='{}';
+            '''.format(target_bal+int(amt), target)
+        )
+
         if len(self.transactions) >= BLOCK_CAPACITY:
-            self.is_full = True
             self.next_block = Block(self.block_id + 1)
             self.next_block.prev_hash = self.block_hash
         
     
-cur = Block(0)
+# Testing 
 
-tmp = cur
+current = Block(0)
+
+tmp = current
 
 for i in range(200):
-    tmp.AddTransactionToBlock("a", "b", "20")
+    tmp.AddTransactionToBlock("Person1", "Person2", "20")
 
     if len(tmp.transactions) == 100:
         tmp = tmp.next_block
 
-while cur:
-    print(cur.transactions)
-    cur = cur.next_block
+# while cur:
+#     print(cur.transactions)
+#     cur = cur.next_block
+
+for row in cur.execute("SELECT * FROM acct"):
+    print(row)
 
 
 
