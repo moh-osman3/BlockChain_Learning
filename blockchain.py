@@ -119,26 +119,75 @@ class Block:
             self.next_block.prev_hash = self.block_hash
             self.GenerateNonce()
         
-    
+
+'''
+-- BlockChain --
+
+The BlockChain Class defines a blockchain
+
+Params:
+- head:   the first block in the blockchain, stored for printing purposes
+- tail:   the most recently added block to the blockchain 
+
+Methods:
+- VerifyBlock:      verifies the proof of work before adding block to blockchain 
+- AddBlock:         adds block to blockchain
+- PrintBlockChain   prints all transactions from all blocks 
+'''
+class BlockChain:
+    def __init__(self):
+        self.head = None
+        self.tail = None
+
+    def VerifyBlock(self, block):
+        if not block.nonce or not block.block_hash:
+            return False
+
+        hash_val = sha256(block.block_hash + block.nonce).hexdigest()
+        # confirm first three characters are 0
+        if hash_val[:3] != '000':
+            return False
+        
+        return True
+
+    def AddBlock(self, block):
+        if not self.VerifyBlock(block):
+            return
+
+        # if self.head is None then this is the first block
+        if not self.head:
+            self.head = block
+            self.tail = block
+            return
+
+        block.prev_hash = self.tail.block_hash
+        self.tail.next_block = block
+        self.tail = block
+
+    def PrintBlockChain(self):
+        tmp = self.head
+        while tmp:
+            print(tmp.transactions)
+            tmp = tmp.next_block
+
+        
 # Testing 
+blockchain = BlockChain()
 
-current = Block(0)
-
-tmp = current
-
+idy = 0
+current = Block(idy)
 for i in range(200):
-    tmp.AddTransactionToBlock("Person1", "Person2", "20")
+    current.AddTransactionToBlock("Person1", "Person2", "20")
 
-    if len(tmp.transactions) == 100:
-        tmp = tmp.next_block
-
-# while cur:
-#     print(cur.transactions)
-#     cur = cur.next_block
-
+    if len(current.transactions) == BLOCK_CAPACITY:
+        blockchain.AddBlock(current)
+        idy += 1
+        current = Block(idy)
+        
 for row in cur.execute("SELECT * FROM acct"):
     print(row)
 
+blockchain.PrintBlockChain()
 
 
 
